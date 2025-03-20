@@ -34,9 +34,11 @@ com.MultiTimerAssignment.app-packageDebugResources-32 /Users/croma/Downloads/Mul
 com.MultiTimerAssignment.app-merged_res-33 /Users/croma/Downloads/MultiTimerAssignment/android/app/build/intermediates/merged_res/debug
 com.MultiTimerAssignment.app-debug-34 /Users/croma/Downloads/MultiTimerAssignment/android/app/src/debug/res
 com.MultiTimerAssignment.app-main-35 /Users/croma/Downloads/MultiTimerAssignment/android/app/src/main/res
-com.MultiTimerAssignment.app-packaged_res-36 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-gesture-handler/android/build/intermediates/packaged_res/debug
-com.MultiTimerAssignment.app-packaged_res-37 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-reanimated/android/build/intermediates/packaged_res/debug
-com.MultiTimerAssignment.app-packaged_res-38 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-safe-area-context/android/build/intermediates/packaged_res/debug
-com.MultiTimerAssignment.app-packaged_res-39 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-screens/android/build/intermediates/packaged_res/debug
-com.MultiTimerAssignment.app-packaged_res-40 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-svg/android/build/intermediates/packaged_res/debug
-com.MultiTimerAssignment.app-packaged_res-41 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-vector-icons/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-36 /Users/croma/Downloads/MultiTimerAssignment/node_modules/@react-native-async-storage/async-storage/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-37 /Users/croma/Downloads/MultiTimerAssignment/node_modules/@react-native-picker/picker/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-38 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-gesture-handler/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-39 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-reanimated/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-40 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-safe-area-context/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-41 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-screens/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-42 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-svg/android/build/intermediates/packaged_res/debug
+com.MultiTimerAssignment.app-packaged_res-43 /Users/croma/Downloads/MultiTimerAssignment/node_modules/react-native-vector-icons/android/build/intermediates/packaged_res/debug

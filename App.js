@@ -1,13 +1,14 @@
 import React from 'react';
 import {SafeAreaView} from 'react-native';
-import Dashboard from './src/screens/Dashboard';
+import HomeScreen from './src/screens/HomeScreen';
+import Routes from './src/navigation/Routes';
 
 const App = () => {
   const [loading, setLoading] = React.useState(true);
 
   return (
       <SafeAreaView style={{flex: 1}}>
-          <Dashboard />
+          <Routes />
       </SafeAreaView>
   );
 };
