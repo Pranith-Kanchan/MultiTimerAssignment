@@ -8,6 +8,7 @@ import {
   SectionList,
   StyleSheet,
   Switch,
+  Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
 import Octicons from 'react-native-vector-icons/Octicons';
@@ -36,7 +37,6 @@ const TimerApp = ({ navigation }) => {
 
   const styles = getStyles(isDarkMode);
 
-  // Save dark mode state to AsyncStorage
   const saveDarkModeState = async (value) => {
     try {
       await AsyncStorage.setItem('isDarkMode', JSON.stringify(value));
@@ -45,7 +45,6 @@ const TimerApp = ({ navigation }) => {
     }
   };
 
-  // Load dark mode state from AsyncStorage
   const loadDarkModeState = async () => {
     try {
       const value = await AsyncStorage.getItem('isDarkMode');
@@ -57,12 +56,10 @@ const TimerApp = ({ navigation }) => {
     }
   };
 
-  // Load dark mode state when the component mounts
   useEffect(() => {
     loadDarkModeState();
   }, []);
 
-  // Update dark mode state and save it to AsyncStorage
   const toggleDarkMode = () => {
     const newDarkModeState = !isDarkMode;
     setIsDarkMode(newDarkModeState);
@@ -94,7 +91,6 @@ const TimerApp = ({ navigation }) => {
   }, [runningTimers]);
 
 
-  // Get unique categories from timers
   const categories = ['All', ...new Set(timers.map(timer => timer.category))];
 
   const filteredTimers =
@@ -136,9 +132,35 @@ const TimerApp = ({ navigation }) => {
     saveTimers(timers);
   }, [timers]);
 
-  // Add Timer
   const addTimer = () => {
     const selectedCategory = category === 'Others' ? otherCategory : category;
+
+  if (!timerName) {
+    Alert.alert(
+      "Missing Timer Name",
+      "Please enter a name for the Task.",
+      [{ text: "OK", onPress: () => console.log("OK Pressed") }]
+    );
+    return; 
+  }
+
+  if (!duration) {
+    Alert.alert(
+      "Missing Duration",
+      "Please enter a Duration for the Task.",
+      [{ text: "OK", onPress: () => console.log("OK Pressed") }]
+    );
+    return; 
+  }
+
+  if (!selectedCategory) {
+    Alert.alert(
+      "Missing Category",
+      "Please select or enter a category for the Task.",
+      [{ text: "OK", onPress: () => console.log("OK Pressed") }]
+    );
+    return; 
+  }
     if (timerName && duration && selectedCategory) {
       const newTimer = {
         id: Date.now(),
@@ -148,7 +170,7 @@ const TimerApp = ({ navigation }) => {
         category: selectedCategory,
         isRunning: false,
         completed: false,
-        halfwayAlertEnabled, // Add this property
+        halfwayAlertEnabled,
       };
       setTimers([...timers, newTimer]);
       resetForm();
@@ -167,12 +189,10 @@ const TimerApp = ({ navigation }) => {
 
                 console.log(`Timer ${id} - Remaining Time: ${updatedTime}`);
 
-                // Trigger halfway alert
                 if (t.halfwayAlertEnabled && updatedTime === Math.floor(t.duration / 2)) {
                   Toast.show(`You're halfway through the timer "${t.name}"!`);
                 }
 
-                // Stop the timer when remainingTime hits 0
                 if (updatedTime === 0) {
                   clearInterval(interval);
                   setRunningTimers((prev) => {
@@ -181,8 +201,8 @@ const TimerApp = ({ navigation }) => {
                     return updatedTimers;
                   });
                   setModalVisibleComplete(true);
-                  saveCompletedTimer(t);
                   setCompletedTimer(t?.name);
+                  saveCompletedTimer(t);
                 }
 
                 return {
@@ -196,7 +216,6 @@ const TimerApp = ({ navigation }) => {
           );
         }, 1000);
 
-        // Store interval in runningTimers with unique id
         setRunningTimers((prev) => ({ ...prev, [id]: interval }));
 
         return { ...timer, isRunning: true };
@@ -207,7 +226,6 @@ const TimerApp = ({ navigation }) => {
     setTimers(updatedTimers);
   };
 
-  // Pause Timer
   const pauseTimer = (id) => {
     if (runningTimers[id]) {
       clearInterval(runningTimers[id]);
@@ -224,7 +242,6 @@ const TimerApp = ({ navigation }) => {
     }
   };
 
-  // Reset Timer
   const resetTimer = (id) => {
     setTimers((prevTimers) =>
       prevTimers.map((timer) =>
@@ -236,7 +253,6 @@ const TimerApp = ({ navigation }) => {
     pauseTimer(id);
   };
 
-  // Delete Timer
   const deleteTimer = (id) => {
     if (runningTimers[id]) {
       clearInterval(runningTimers[id]);
@@ -249,7 +265,6 @@ const TimerApp = ({ navigation }) => {
     });
   };
 
-  // Reset Form
   const resetForm = () => {
     setTimerName('');
     setDuration('');
@@ -258,14 +273,12 @@ const TimerApp = ({ navigation }) => {
     setModalVisible(false);
   };
 
-  // Format Time (MM:SS)
   const formatTime = (seconds) => {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
   };
 
-  // Group Timers by Category
   const groupTimersByCategory = () => {
     const groupedTimers = filteredTimers.reduce((acc, timer) => {
       if (!acc[timer.category]) {
@@ -280,7 +293,6 @@ const TimerApp = ({ navigation }) => {
     }));
   };
 
-  // Toggle Collapse/Expand Category
   const toggleCategory = (category) => {
     setCollapsedCategories((prev) => ({
       ...prev,
@@ -303,7 +315,6 @@ const TimerApp = ({ navigation }) => {
     }
   }, [timers]);
 
-  // Render Timer Item
   const renderTimerItem = ({ item }) => {
     const progress = 1 - item.remainingTime / item.duration;
     const percentage = Math.floor(progress * 100);
@@ -399,7 +410,6 @@ const TimerApp = ({ navigation }) => {
     </View>
   );
 
-  // Start All Timers in a Category
   const startAllTimersInCategory = (category) => {
     const categoryTimers = timers.filter((timer) => timer.category === category);
 
@@ -417,7 +427,6 @@ const TimerApp = ({ navigation }) => {
             )
           );
 
-          // Check if the remaining time has reached 0
           const currentTimer = timers.find((t) => t.id === timer.id);
           if (currentTimer.remainingTime <= 0) {
             clearInterval(interval);
@@ -439,7 +448,6 @@ const TimerApp = ({ navigation }) => {
     );
   };
 
-  // Pause All Timers in a Category
   const pauseAllTimersInCategory = (category) => {
     const categoryTimers = timers.filter((timer) => timer.category === category);
 
@@ -461,7 +469,6 @@ const TimerApp = ({ navigation }) => {
     );
   };
 
-  // Reset All Timers in a Category
   const resetAllTimersInCategory = (category) => {
     pauseAllTimersInCategory(category);
 
@@ -800,7 +807,7 @@ const getStyles = (isDarkMode) => StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     elevation: 5,
-    shadowColor: '#000', // for shadow on iOS
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,

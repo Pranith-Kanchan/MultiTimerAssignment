@@ -4,8 +4,6 @@ import HomeScreen from './src/screens/HomeScreen';
 import Routes from './src/navigation/Routes';
 
 const App = () => {
-  const [loading, setLoading] = React.useState(true);
-
   return (
       <SafeAreaView style={{flex: 1}}>
           <Routes />
