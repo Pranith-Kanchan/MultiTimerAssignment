@@ -7,19 +7,21 @@ import {
   TouchableOpacity,
   SectionList,
   StyleSheet,
-  Button,
   Switch,
-  Alert
 } from 'react-native';
 import Icon from 'react-native-vector-icons/FontAwesome';
+import Octicons from 'react-native-vector-icons/Octicons';
+import Ionicons from 'react-native-vector-icons/Ionicons';
+import AntDesign from 'react-native-vector-icons/AntDesign';
 import RNPickerSelect from 'react-native-picker-select';
 import { Picker } from '@react-native-picker/picker';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import Toast from 'react-native-simple-toast';
-
+import Colors from '../../constants/Colors';
 
 const TimerApp = ({ navigation }) => {
   const [modalVisible, setModalVisible] = useState(false);
+  const [modalVisibleComplete, setModalVisibleComplete] = useState(false);
   const [timers, setTimers] = useState([]);
   const [timerName, setTimerName] = useState('');
   const [duration, setDuration] = useState('');
@@ -29,10 +31,43 @@ const TimerApp = ({ navigation }) => {
   const [collapsedCategories, setCollapsedCategories] = useState({});
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [halfwayAlertEnabled, setHalfwayAlertEnabled] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [completedTimer, setCompletedTimer] = useState(null);
 
-  // console.log('=============timers=======================');
-  // console.log(JSON.stringify(timers,null,2));
-  // console.log('====================================');
+  const styles = getStyles(isDarkMode);
+
+  // Save dark mode state to AsyncStorage
+  const saveDarkModeState = async (value) => {
+    try {
+      await AsyncStorage.setItem('isDarkMode', JSON.stringify(value));
+    } catch (error) {
+      console.error('Error saving dark mode state:', error);
+    }
+  };
+
+  // Load dark mode state from AsyncStorage
+  const loadDarkModeState = async () => {
+    try {
+      const value = await AsyncStorage.getItem('isDarkMode');
+      if (value !== null) {
+        setIsDarkMode(JSON.parse(value));
+      }
+    } catch (error) {
+      console.error('Error loading dark mode state:', error);
+    }
+  };
+
+  // Load dark mode state when the component mounts
+  useEffect(() => {
+    loadDarkModeState();
+  }, []);
+
+  // Update dark mode state and save it to AsyncStorage
+  const toggleDarkMode = () => {
+    const newDarkModeState = !isDarkMode;
+    setIsDarkMode(newDarkModeState);
+    saveDarkModeState(newDarkModeState);
+  };
 
   const saveCompletedTimer = async (timer) => {
     try {
@@ -62,13 +97,11 @@ const TimerApp = ({ navigation }) => {
   // Get unique categories from timers
   const categories = ['All', ...new Set(timers.map(timer => timer.category))];
 
-  // Filter timers based on the selected category
   const filteredTimers =
     selectedCategory === 'All'
       ? timers
       : timers.filter(timer => timer.category === selectedCategory);
 
-  // Predefined categories
   const categoryOptions = [
     { label: 'Workout', value: 'Workout' },
     { label: 'Study', value: 'Study' },
@@ -123,7 +156,6 @@ const TimerApp = ({ navigation }) => {
   };
 
 
-  // Start Timer
   const startTimer = (id) => {
     const updatedTimers = timers.map((timer) => {
       if (timer.id === id && !runningTimers[id]) {
@@ -133,8 +165,10 @@ const TimerApp = ({ navigation }) => {
               if (t.id === id) {
                 const updatedTime = t.remainingTime > 0 ? t.remainingTime - 1 : 0;
 
+                console.log(`Timer ${id} - Remaining Time: ${updatedTime}`);
+
                 // Trigger halfway alert
-                if (t.halfwayAlertEnabled && t.remainingTime === Math.floor(t.duration / 2)) {
+                if (t.halfwayAlertEnabled && updatedTime === Math.floor(t.duration / 2)) {
                   Toast.show(`You're halfway through the timer "${t.name}"!`);
                 }
 
@@ -146,7 +180,9 @@ const TimerApp = ({ navigation }) => {
                     delete updatedTimers[id];
                     return updatedTimers;
                   });
-                  saveCompletedTimer(t); // Save the completed timer
+                  setModalVisibleComplete(true);
+                  saveCompletedTimer(t);
+                  setCompletedTimer(t?.name);
                 }
 
                 return {
@@ -159,11 +195,15 @@ const TimerApp = ({ navigation }) => {
             })
           );
         }, 1000);
+
+        // Store interval in runningTimers with unique id
         setRunningTimers((prev) => ({ ...prev, [id]: interval }));
+
         return { ...timer, isRunning: true };
       }
       return timer;
     });
+
     setTimers(updatedTimers);
   };
 
@@ -253,7 +293,7 @@ const TimerApp = ({ navigation }) => {
     if (completedTimers.length > 0) {
       completedTimers.forEach((timer) => {
         console.log('Timer completed:', timer);
-        saveCompletedTimer(timer); // Save the completed timer
+        saveCompletedTimer(timer);
         setTimers((prevTimers) =>
           prevTimers.map((t) =>
             t.id === timer.id ? { ...t, completed: true } : t
@@ -261,65 +301,70 @@ const TimerApp = ({ navigation }) => {
         );
       });
     }
-  }, [timers]); // Run this effect whenever `timers` changes
+  }, [timers]);
 
   // Render Timer Item
-const renderTimerItem = ({ item }) => {
-  const progress = 1 - item.remainingTime / item.duration;
-  const percentage = Math.floor(progress * 100);
+  const renderTimerItem = ({ item }) => {
+    const progress = 1 - item.remainingTime / item.duration;
+    const percentage = Math.floor(progress * 100);
 
-  return (
-    <View style={styles.timerItem}>
-      <View style={{ flex: 1 }}>
-        <Text style={styles.timerText}>{item.name}</Text>
-        <Text style={styles.timerText}>
-          {percentage === 100 ? 'Completed' : `Remaining: ${formatTime(item.remainingTime)}`}
-        </Text>
-
-        {/* Progress Bar */}
-        <View style={styles.progressBar}>
-          <View
-            style={{
-              width: `${percentage}%`,
-              backgroundColor: percentage === 100 ? 'green' : '#007BFF',
-              height: '100%',
-            }}
-          />
+    return (
+      <View style={styles.timerItem}>
+        <View style={{ flex: 1, width: '100%' }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={[styles.timerText1]}>
+              {item.name}
+            </Text>
+            <Text style={[styles.timerText, { fontSize: percentage === 100 ? 16 : 24 }]}>
+              {percentage === 100 ? 'Completed' : `${formatTime(item.remainingTime)}`}
+            </Text>
+          </View>
+          <View style={styles.progressBar}>
+            <View
+              style={{
+                width: `${percentage}%`,
+                backgroundColor: percentage === 100 ? 'green' : '#007BFF',
+                height: '100%',
+              }}
+            />
+          </View>
+          <Text style={styles.percentageText}>{percentage}%</Text>
         </View>
-        <Text style={styles.percentageText}>{percentage}%</Text>
+        {
+          percentage === 100 ? null :
+            <View style={styles.buttonRow}>
+              {item.isRunning ? (
+                <TouchableOpacity
+                  onPress={() => pauseTimer(item.id)}
+                  style={styles.iconButton}>
+                  <Icon name="pause" size={20} color="#FF6347" />
+                </TouchableOpacity>
+              ) : (
+                <TouchableOpacity
+                  onPress={() => startTimer(item.id)}
+                  style={styles.iconButton}>
+                  <Icon name="play" size={20} color="#4CAF50" />
+                </TouchableOpacity>
+              )}
+
+              <TouchableOpacity
+                onPress={() => resetTimer(item.id)}
+                style={styles.iconButton}>
+                <Icon name="refresh" size={20} color="#007BFF" />
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                onPress={() => deleteTimer(item.id)}
+                style={styles.iconButton}>
+                <Icon name="trash" size={20} color="#FF4444" />
+              </TouchableOpacity>
+            </View>
+        }
+
       </View>
+    );
+  };
 
-      {/* Control Buttons */}
-      <View style={styles.buttonRow}>
-        {item.isRunning ? (
-          <TouchableOpacity
-            onPress={() => pauseTimer(item.id)}
-            style={styles.iconButton}>
-            <Icon name="pause" size={20} color="#FF6347" />
-          </TouchableOpacity>
-        ) : (
-          <TouchableOpacity
-            onPress={() => startTimer(item.id)}
-            style={styles.iconButton}>
-            <Icon name="play" size={20} color="#4CAF50" />
-          </TouchableOpacity>
-        )}
-
-        <TouchableOpacity
-          onPress={() => resetTimer(item.id)}
-          style={styles.iconButton}>
-          <Icon name="refresh" size={20} color="#007BFF" />
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          onPress={() => deleteTimer(item.id)}
-          style={styles.iconButton}>
-          <Icon name="trash" size={20} color="#FF4444" />
-        </TouchableOpacity>
-      </View>
-    </View>
-  );
-};
   // Render Section Header
   const renderSectionHeader = ({ section }) => (
     <View>
@@ -332,7 +377,6 @@ const renderTimerItem = ({ item }) => {
         </Text>
       </TouchableOpacity>
 
-      {/* Category-Level Controls */}
       {!collapsedCategories[section.category] && (
         <View style={styles.categoryButtons}>
           <TouchableOpacity
@@ -432,109 +476,168 @@ const renderTimerItem = ({ item }) => {
 
   return (
     <View style={styles.container}>
-      {/* Category Picker */}
-      <Picker
-        selectedValue={selectedCategory}
-        onValueChange={(itemValue) => setSelectedCategory(itemValue)}
-        style={styles.picker}
-      >
-        {categories.map((category, index) => (
-          <Picker.Item key={index} label={category} value={category} />
-        ))}
-      </Picker>
-
-      {/* Add Timer Button */}
-      <Button title="Add Timer" onPress={() => setModalVisible(true)} />
-      <Button
-        title="View History"
-        onPress={() => navigation.navigate('HistoryScreen')}
-      />
-
-      {/* Timer List with Grouping */}
-      <SectionList
-        sections={groupTimersByCategory()}
-        keyExtractor={(item) => item.id.toString()}
-        renderItem={({ item, section }) =>
-          !collapsedCategories[section.category] ? renderTimerItem({ item }) : null
-        }
-        renderSectionHeader={renderSectionHeader}
-      />
-
-      {/* Add Timer Modal */}
-      <Modal visible={modalVisible} transparent animationType="slide">
-        <View style={styles.modalOverlay}>
-          <View style={styles.modalContent}>
-            <Text style={styles.modalHeader}>Add New Timer</Text>
-            <TextInput
-              placeholder="Timer Name"
-              value={timerName}
-              onChangeText={setTimerName}
-              style={styles.input}
-            />
-            <TextInput
-              placeholder="Duration (seconds)"
-              value={duration}
-              onChangeText={setDuration}
-              keyboardType="numeric"
-              style={styles.input}
-            />
-
-            {/* Category Dropdown */}
-            <RNPickerSelect
-              onValueChange={(value) => setCategory(value)}
-              items={categoryOptions}
-              style={pickerSelectStyles}
+      <View style={{ backgroundColor: Colors.primary, height: '19%' }}>
+        <View style={{ flexDirection: 'row', justifyContent: "space-between", marginTop: '2%', marginRight: '5%' }}>
+          <Text style={[styles.greeting, { color: isDarkMode ? Colors.white : Colors.white }]}>
+            Hello! 👋
+          </Text>
+          <View style={{ flexDirection: 'row', justifyContent: "space-between", gap: 5 }}>
+            <TouchableOpacity
+              onPress={() => navigation.navigate('HistoryScreen')}
+              style={styles.darkModeButton}>
+              <Octicons
+                name="history"
+                size={26}
+                color={isDarkMode ? '#FFD700' : Colors.primary}
+              />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => toggleDarkMode()}
+              style={styles.darkModeButton}>
+              <Icon name={isDarkMode ? 'sun-o' : 'moon-o'} size={24} color={isDarkMode ? '#FFD700' : Colors.primary} />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Picker
+          selectedValue={selectedCategory}
+          onValueChange={(itemValue) => setSelectedCategory(itemValue)}
+          style={[styles.picker, { color: isDarkMode ? '#FFD700' : Colors.primary }]}
+          dropdownIconColor={isDarkMode ? '#FFD700' : Colors.primary}
+        >
+          {categories.map((category, index) => (
+            <Picker.Item
+              key={index}
+              label={category}
               value={category}
-              placeholder={{ label: 'Select a Category', value: '' }}
+              color={isDarkMode ? 'black' : Colors.primary}
             />
+          ))}
+        </Picker>
 
-            {/* Other Category Input */}
-            {category === 'Others' && (
+      </View>
+
+      <View style={styles.container1}>
+        <SectionList
+          sections={groupTimersByCategory()}
+          keyExtractor={(item) => item.id.toString()}
+          renderItem={({ item, section }) =>
+            !collapsedCategories[section.category] ? renderTimerItem({ item }) : null
+          }
+          renderSectionHeader={renderSectionHeader}
+        />
+
+        <TouchableOpacity
+          style={styles.addButton}
+          onPress={() => setModalVisible(true)}>
+          <AntDesign name="plus" size={24} color="white" />
+        </TouchableOpacity>
+
+        <Modal visible={modalVisible} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent}>
+
+              <Text style={styles.modalHeader}>Add New Timer</Text>
+
               <TextInput
-                placeholder="Enter Custom Category"
-                value={otherCategory}
-                onChangeText={setOtherCategory}
+                placeholder="Timer Name"
+                value={timerName}
+                onChangeText={setTimerName}
                 style={styles.input}
               />
-            )}
-
-            <View style={styles.toggleRow}>
-              <Text style={styles.toggleLabel}>Enable Halfway Alert</Text>
-              <Switch
-                value={halfwayAlertEnabled}
-                onValueChange={setHalfwayAlertEnabled}
-                trackColor={{ false: '#767577', true: '#81b0ff' }}
-                thumbColor={halfwayAlertEnabled ? '#007BFF' : '#f4f3f4'}
+              <TextInput
+                placeholder="Duration (seconds)"
+                value={duration}
+                onChangeText={setDuration}
+                keyboardType="numeric"
+                style={styles.input}
               />
-            </View>
 
-            <View style={styles.buttonRow}>
-              <TouchableOpacity onPress={addTimer} style={styles.buttonStyle}>
-                <Text style={styles.buttonText}>Add</Text>
-              </TouchableOpacity>
+              <RNPickerSelect
+                onValueChange={(value) => setCategory(value)}
+                items={categoryOptions}
+                style={pickerSelectStyles}
+                value={category}
+                placeholder={{ label: 'Select a Category', value: '' }}
+              />
+
+              {category === 'Others' && (
+                <TextInput
+                  placeholder="Enter Custom Category"
+                  value={otherCategory}
+                  onChangeText={setOtherCategory}
+                  style={styles.input}
+                />
+              )}
+
+              <View style={styles.toggleRow}>
+                <Text style={styles.toggleLabel}>Enable Halfway Alert</Text>
+                <Switch
+                  value={halfwayAlertEnabled}
+                  onValueChange={setHalfwayAlertEnabled}
+                  trackColor={{ false: '#767577', true: '#81b0ff' }}
+                  thumbColor={halfwayAlertEnabled ? '#007BFF' : '#f4f3f4'}
+                />
+              </View>
+
+              <View style={styles.buttonRow}>
+                <TouchableOpacity onPress={addTimer} style={styles.buttonStyle}>
+                  <Text style={styles.buttonText}>Add</Text>
+                </TouchableOpacity>
+              </View>
               <TouchableOpacity
-                onPress={() => setModalVisible(false)}
-                style={[styles.buttonStyle, { backgroundColor: 'red' }]}>
-                <Text style={styles.buttonText}>Cancel</Text>
+                style={styles.graycircle1}
+                onPress={() => setModalVisible(false)}>
+                <AntDesign name="close" size={22} color={Colors.black} />
               </TouchableOpacity>
             </View>
           </View>
-        </View>
-      </Modal>
+        </Modal>
+
+        <Modal visible={modalVisibleComplete} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <View style={styles.modalContent1}>
+              <Ionicons
+                name="checkmark-done-circle-sharp"
+                size={106}
+                color={Colors.green}
+              />
+              <View style={{ marginBottom: '5%', alignItems: 'center', justifyContent: "center" }}>
+
+                <Text style={styles.modalHeader}>Congratulations! 🎉</Text>
+                <Text style={styles.timerNameText}>You’ve successfully completed the {completedTimer}!</Text>
+                <Text style={styles.timerNameText}>Great job staying focused and achieving your goal. Keep up the amazing work! 💪</Text>
+              </View>
+
+              <TouchableOpacity
+                style={styles.graycircle1}
+                onPress={() => setModalVisibleComplete(false)}>
+                <AntDesign name="close" size={22} color={Colors.black} />
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
+      </View>
     </View>
   );
 };
 
-const styles = StyleSheet.create({
+const getStyles = (isDarkMode) => StyleSheet.create({
   container: {
     flex: 1,
-    padding: 16,
-    backgroundColor: '#f5f5f5',
+    backgroundColor: isDarkMode ? '#333' : Colors.lightBlue,
+  },
+  container1: {
+    flex: 1,
+    padding: '3%',
+    backgroundColor: isDarkMode ? '#333' : Colors.lightBlue,
   },
   picker: {
     height: 50,
-    width: '100%',
+    width: '90%',
     marginBottom: 16,
+    backgroundColor: isDarkMode ? '#333' : Colors.lightBlue,
+    alignSelf: "center",
+    marginTop: '4%'
   },
   modalOverlay: {
     flex: 1,
@@ -543,27 +646,45 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   modalContent: {
-    width: '80%',
-    padding: 20,
-    backgroundColor: 'white',
-    borderRadius: 10,
+    padding: '5%',
+    backgroundColor: isDarkMode ? '#444' : 'white',
+    borderRadius: 13,
+    paddingHorizontal: '4%',
+    paddingVertical: '5%',
+    elevation: 5,
+    marginVertical: '12%',
+    marginHorizontal: '4%',
+    justifyContent: 'center',
+  },
+  modalContent1: {
+    backgroundColor: isDarkMode ? '#444' : 'white',
+    borderRadius: 13,
+    elevation: 5,
+    marginVertical: '12%',
+    marginHorizontal: '3%',
+    justifyContent: 'center',
+    alignItems: "center"
   },
   modalHeader: {
     fontSize: 18,
     fontWeight: 'bold',
-    marginBottom: 16,
+    marginBottom: '5%',
+    color: isDarkMode ? '#fff' : '#000',
   },
   input: {
     height: 40,
-    borderColor: '#ccc',
+    borderColor: isDarkMode ? '#555' : '#ccc',
     borderWidth: 1,
     borderRadius: 5,
     paddingHorizontal: 10,
     marginBottom: 16,
+    color: isDarkMode ? '#fff' : '#000',
+    backgroundColor: isDarkMode ? '#555' : '#fff',
   },
   buttonRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    width: '100%',
   },
   buttonStyle: {
     flex: 1,
@@ -578,33 +699,42 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
   timerItem: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
+    flexDirection: 'column',
     alignItems: 'center',
-    padding: 16,
+    padding: '3%',
     marginBottom: 8,
-    backgroundColor: 'white',
+    backgroundColor: isDarkMode ? '#444' : 'white',
     borderRadius: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.1,
     shadowRadius: 4,
     elevation: 2,
+    flex: 1
+
   },
   timerText: {
+    fontSize: 26,
+    color: isDarkMode ? '#fff' : '#333',
+    fontWeight: '600'
+  },
+  timerText1: {
     fontSize: 16,
-    color: '#333',
+    color: isDarkMode ? '#fff' : '#333',
+    fontWeight: '600',
+    width: '70%'
   },
   progressBar: {
     height: 10,
     backgroundColor: '#e0e0e0',
     borderRadius: 5,
-    marginTop: 8,
+    marginTop: '3%',
     overflow: 'hidden',
+    flex: 1
   },
   percentageText: {
     fontSize: 12,
-    color: '#666',
+    color: isDarkMode ? '#fff' : '#333',
     marginTop: 4,
   },
   iconButton: {
@@ -614,16 +744,16 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    backgroundColor: '#f0f0f0',
-    borderRadius: 8,
-    marginBottom: 8,
+    paddingVertical: '3%',
+    paddingHorizontal: '3%',
+    backgroundColor: isDarkMode ? '#555' : '#e0e8fe',
+    borderRadius: 5,
+    marginBottom: '5%',
   },
   categoryTitle: {
     fontSize: 18,
     fontWeight: 'bold',
-    color: '#333',
+    color: isDarkMode ? '#fff' : '#333',
   },
   toggleIcon: {
     fontSize: 16,
@@ -631,8 +761,8 @@ const styles = StyleSheet.create({
   },
   categoryButtons: {
     flexDirection: 'row',
-    justifyContent: 'space-around',
-    marginBottom: 8,
+    justifyContent: 'space-between',
+    marginBottom: '3%',
   },
   categoryButton: {
     padding: 8,
@@ -648,10 +778,55 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     marginVertical: 10,
   },
+  darkModeButton: {
+    padding: 10,
+    borderRadius: 20,
+    borderRadius: 17,
+    paddingHorizontal: 18,
+    paddingVertical: 15,
+    backgroundColor: isDarkMode ? '#555' : '#e0e8fe',
+  },
   toggleLabel: {
     fontSize: 16,
-    color: '#333',
+    color: isDarkMode ? '#fff' : '#333',
+  }, addButton: {
+    position: 'absolute',
+    bottom: 20,
+    right: 20,
+    width: 60,
+    height: 60,
+    borderRadius: 30,
+    backgroundColor: '#007BFF',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 5,
+    shadowColor: '#000', // for shadow on iOS
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
+  }, greeting: {
+    fontSize: 30,
+    fontWeight: 'bold',
+    textAlign: 'center',
+    marginVertical: 10,
+    marginLeft: '4.5%'
+  }, graycircle1: {
+    width: 35,
+    height: 35,
+    borderRadius: 19,
+    backgroundColor: '#F3F5F8',
+    justifyContent: 'center',
+    alignItems: 'center',
+    position: 'absolute',
+    top: 10,
+    right: 12
+  }, timerNameText: {
+    fontSize: 16,
+    color: isDarkMode ? '#fff' : '#333',
+    marginTop: 10,
+    textAlign: 'center',
   },
+
 });
 
 const pickerSelectStyles = StyleSheet.create({
@@ -663,7 +838,7 @@ const pickerSelectStyles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 4,
     color: 'black',
-    paddingRight: 30, // to ensure the text is never behind the icon
+    paddingRight: 30,
   },
   inputAndroid: {
     fontSize: 16,
@@ -673,8 +848,9 @@ const pickerSelectStyles = StyleSheet.create({
     borderColor: '#ccc',
     borderRadius: 8,
     color: 'black',
-    paddingRight: 30, // to ensure the text is never behind the icon
-  },
+    paddingRight: 30,
+  }
 });
+
 
 export default TimerApp;
