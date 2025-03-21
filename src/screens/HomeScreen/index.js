@@ -315,6 +315,9 @@ const TimerApp = ({ navigation }) => {
     }
   }, [timers]);
 
+
+
+
   const renderTimerItem = ({ item }) => {
     const progress = 1 - item.remainingTime / item.duration;
     const percentage = Math.floor(progress * 100);
@@ -410,42 +413,56 @@ const TimerApp = ({ navigation }) => {
     </View>
   );
 
+
   const startAllTimersInCategory = (category) => {
     const categoryTimers = timers.filter((timer) => timer.category === category);
-
+  
     categoryTimers.forEach((timer) => {
       if (!runningTimers[timer.id]) {
+        console.log(`Starting timer with ID: ${timer.id}`); // Log when a timer starts
+  
         const interval = setInterval(() => {
-          setTimers((prevTimers) =>
-            prevTimers.map((t) =>
+          setTimers((prevTimers) => {
+            const updatedTimers = prevTimers.map((t) =>
               t.id === timer.id
                 ? {
-                  ...t,
-                  remainingTime: t.remainingTime > 0 ? t.remainingTime - 1 : 0,
-                }
+                    ...t,
+                    remainingTime: t.remainingTime > 0 ? t.remainingTime - 1 : 0,
+                  }
                 : t
-            )
-          );
-
-          const currentTimer = timers.find((t) => t.id === timer.id);
-          if (currentTimer.remainingTime <= 0) {
-            clearInterval(interval);
-            setRunningTimers((prev) => {
-              const updatedTimers = { ...prev };
-              delete updatedTimers[timer.id];
-              return updatedTimers;
-            });
-          }
+            );
+  
+            // Check if the current timer has finished
+            const currentTimer = updatedTimers.find((t) => t.id === timer.id);
+            if (currentTimer.remainingTime <= 0) {
+              console.log(`Timer with ID: ${timer.id} has finished.`); // Log when a timer finishes
+              setModalVisibleComplete(true);
+              setCompletedTimer(timer?.name);
+              clearInterval(interval);
+              setRunningTimers((prev) => {
+                const updatedRunningTimers = { ...prev };
+                delete updatedRunningTimers[timer.id];
+                return updatedRunningTimers;
+              });
+            } else {
+              console.log(`Timer with ID: ${timer.id} has ${currentTimer.remainingTime} seconds remaining.`); // Log remaining time
+            }
+  
+            return updatedTimers;
+          });
         }, 1000);
+  
         setRunningTimers((prev) => ({ ...prev, [timer.id]: interval }));
       }
     });
-
+  
     setTimers((prevTimers) =>
       prevTimers.map((timer) =>
         timer.category === category ? { ...timer, isRunning: true } : timer
       )
     );
+  
+    console.log(`All timers in category "${category}" have been started.`); // Log when all timers in the category are started
   };
 
   const pauseAllTimersInCategory = (category) => {
@@ -531,6 +548,11 @@ const TimerApp = ({ navigation }) => {
             !collapsedCategories[section.category] ? renderTimerItem({ item }) : null
           }
           renderSectionHeader={renderSectionHeader}
+          ListEmptyComponent={() => (
+            <View style={styles.emptyContainer}>
+              <Text style={styles.emptyText}>No timers available. Add a new timer to get started!</Text>
+            </View>
+          )}
         />
 
         <TouchableOpacity
@@ -832,6 +854,18 @@ const getStyles = (isDarkMode) => StyleSheet.create({
     color: isDarkMode ? '#fff' : '#333',
     marginTop: 10,
     textAlign: 'center',
+  },
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  emptyText: {
+    fontSize: 16,
+    color: isDarkMode ? '#fff' : '#888',
+    textAlign: 'center',
+    marginTop: 20,
   },
 
 });
