@@ -51,48 +51,48 @@ To learn more about React Native, take a look at the following resources:
 * Blog - read the latest official React Native Blog posts.
 * @facebook/react-native - the Open Source GitHub repository for React Native.
 
-📄 Assumptions Made During Development
-📚 Data Persistence
+# 📄 Assumptions Made During Development
+* 📚 Data Persistence
 * Timers and history are stored locally using AsyncStorage for persistence.
 * No backend or cloud storage is involved, and data will not be synced across devices.
-⏱️ Timer Management
+* ⏱️ Timer Management
 * Timers are managed using setInterval with 1000ms intervals.
 * Timer precision is not guaranteed to be millisecond-perfect, and slight deviations may occur.
-🕹️ User Interaction
+* 🕹️ User Interaction
 * Users can add, edit, start, pause, reset, and delete timers.
 * Bulk actions (Start, Pause, Reset) apply to all timers within a selected category.
-🕹️ Category Management
+* 🕹️ Category Management
 * Predefined categories (Workout, Study, Break, Others) are available.
 * Custom categories can be added using the Others option with a custom name.
 * Categories cannot be edited or deleted once created.
-🎨 Dark Mode Support
+* 🎨 Dark Mode Support
 * Light and dark themes are supported, with the user’s choice persisted using AsyncStorage.
 * Theme state is restored when the app is reopened.
-⚠️ Validation and Alerts
+* ⚠️ Validation and Alerts
 * Basic form validation ensures that a timer cannot be created without a name, duration, or category.
 * Alert dialogs inform the user when required fields are missing.
 * Halfway alerts notify the user at 50% of the total duration if enabled.
-🎉 Timer Completion
+* 🎉 Timer Completion
 * Timers automatically stop and mark as “Completed” when the remaining time reaches zero.
 * A congratulatory modal is shown upon completion, and completed timers are logged to history.
 * Completed timers are saved in AsyncStorage for viewing in the HistoryScreen.
-📊 Progress Visualization
+* 📊 Progress Visualization
 * A progress bar visually indicates the percentage of timer completion.
 * Completed timers show a “Completed” message instead of remaining time.
-🛠️ State Management
+* 🛠️ State Management
 * useState is used for managing app state, including timers, categories, and user preferences.
 * State updates are persisted in AsyncStorage to maintain consistency after app restarts.
-📑 History Management
+* 📑 History Management
 * Completed timers are logged with name and completion time.
 * History is displayed on a separate HistoryScreen.
 * Timer history cannot be modified or deleted once stored.
-📦 Error Handling
+* 📦 Error Handling
 * Basic error handling is implemented for loading and saving timer data.
 * Unexpected errors during AsyncStorage operations are logged to the console.
-📝 Timer Export (Optional Enhancement)
+* 📝 Timer Export (Optional Enhancement)
 * Export functionality is assumed to be a future feature and will export data as a JSON file.
 * No encryption or advanced formatting is applied during data export.
-🔔 Halfway Alert
+* 🔔 Halfway Alert
 * The halfway alert is triggered exactly at 50% of the timer duration.
 * Alerts are displayed as on-screen messages, not as push notifications.
 
